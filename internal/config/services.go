@@ -1,8 +1,8 @@
 package config
 
 type Service struct {
-	Name     string
-	Host     string
-	Port     string
-	Endpoint string
+	Name     string `yaml:"name"`
+	Host     string `yaml:"host"`
+	Port     string `yaml:"port"`
+	Endpoint string `yaml:"endpoint"`
 }
