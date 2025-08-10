@@ -1,33 +1,45 @@
 package proxy
 
 import (
-	"github.com/go-chi/chi/v5"
-	"github.com/wiktorsk8/reverse-proxy/internal/config"
+	"fmt"
+	"net/http"
 	"net/http/httputil"
 	"net/url"
+	"strings"
+
+	"github.com/go-chi/chi/v5"
+	"github.com/wiktorsk8/reverse-proxy/internal/config"
+	"github.com/wiktorsk8/reverse-proxy/internal/middleware"
 )
 
-func NewProxy(config config.ProxyConfig) {
+func NewProxyRouter(config config.ProxyConfig) *chi.Mux {
 	r := chi.NewRouter()
-	setGeneralMiddleware(r)
-	loadProxyServices(config.Services, r)
-}
 
-func setGeneralMiddleware(r *chi.Mux) {
+	rateLimiter := middleware.NewRateLimiterMiddleware(config.RateLimit)
+	r.Use(rateLimiter.GetMiddleware())
 
-}
-
-func loadProxyServices(services []config.Service, r *chi.Mux) {
-	for _, service := range services {
-		reverseProxyInstance := bootServiceReverseProxy(service.Host)
-		r.Route(service.Endpoint, func(r chi.Router) {
-			r.Mount("/", reverseProxyInstance)
-		})
+	for _, service := range config.Services {
+		handler := getServiceProxyHandler(service)
+		r.Handle(service.Endpoint+"/*", handler)
 	}
+
+	return r
 }
 
-func bootServiceReverseProxy(serviceUrl string) *httputil.ReverseProxy {
+func getServiceProxyHandler(service config.Service) http.Handler {
+	reverseProxy := createReverseProxy(service.Host)
+
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		r.URL.Path = strings.TrimPrefix(r.URL.Path, service.Endpoint)
+		fmt.Println(r.URL.Path)
+
+		reverseProxy.ServeHTTP(w, r)
+	})
+}
+
+func createReverseProxy(serviceUrl string) *httputil.ReverseProxy {
 	target, err := url.Parse(serviceUrl)
+	fmt.Println(target)
 	if err != nil {
 		panic(err) //TODO: Handle
 	}

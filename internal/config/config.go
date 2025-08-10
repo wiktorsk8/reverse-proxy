@@ -1,26 +1,30 @@
 package config
 
-import "os"
+import (
+	"fmt"
+	"os"
+
+	"gopkg.in/yaml.v2"
+)
 
 type ProxyConfig struct {
-	Port      string
-	Services  []Service
-	RateLimit RateLimit
+	Services  []Service `yaml:"services"`
+	RateLimit RateLimit `yaml:"rate-limit"`
 }
 
-func LoadProxyConfig() ProxyConfig {
-	var services []Service
-	service := Service{
-		Name: "backend",
-		Host: "127.0.0.1",
-		Port: "8001",
+func LoadProxyConfig(path string) (ProxyConfig, error) {
+	yamlFile, err := os.ReadFile(path)
+	if err != nil {
+		return ProxyConfig{}, err
+	}
+	fmt.Println(string(yamlFile))
+	conf := &ProxyConfig{}
+
+	err = yaml.Unmarshal(yamlFile, conf)
+
+	if err != nil {
+		return ProxyConfig{}, err
 	}
 
-	services = append(services, service)
-
-	return ProxyConfig{
-		Port:      os.Getenv("PORT"),
-		Services:  services,
-		RateLimit: RateLimit{},
-	}
+	return *conf, nil
 }
