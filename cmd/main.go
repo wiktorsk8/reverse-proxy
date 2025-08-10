@@ -34,7 +34,7 @@ func main() {
 
 	newProxyRouter := proxy.NewProxyRouter(proxyConfig)
 
-	err = http.ListenAndServe("localhost:8080", newProxyRouter)
+	err = http.ListenAndServe(":8000", newProxyRouter)
 	if err != nil {
 		panic(err)
 	}
