@@ -11,3 +11,7 @@ services:
     host: "https://dummyjson.com"
     port: ""
     endpoint: "/dummy"
+
+rate-limit:
+  rate: 1
+  burst: 2

@@ -2,12 +2,14 @@ package config
 
 import (
 	"fmt"
-	"gopkg.in/yaml.v2"
 	"os"
+
+	"gopkg.in/yaml.v2"
 )
 
 type ProxyConfig struct {
-	Services []Service `yaml:"services"`
+	Services  []Service `yaml:"services"`
+	RateLimit RateLimit `yaml:"rate-limit"`
 }
 
 func LoadProxyConfig(path string) (ProxyConfig, error) {

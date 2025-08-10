@@ -9,10 +9,14 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/wiktorsk8/reverse-proxy/internal/config"
+	"github.com/wiktorsk8/reverse-proxy/internal/middleware"
 )
 
 func NewProxyRouter(config config.ProxyConfig) *chi.Mux {
 	r := chi.NewRouter()
+
+	rateLimiter := middleware.NewRateLimiterMiddleware(config.RateLimit)
+	r.Use(rateLimiter.GetMiddleware())
 
 	for _, service := range config.Services {
 		handler := getServiceProxyHandler(service)
@@ -33,7 +37,7 @@ func getServiceProxyHandler(service config.Service) http.Handler {
 	})
 }
 
-func createReverseProxy(serviceUrl string) http.Handler {
+func createReverseProxy(serviceUrl string) *httputil.ReverseProxy {
 	target, err := url.Parse(serviceUrl)
 	fmt.Println(target)
 	if err != nil {
