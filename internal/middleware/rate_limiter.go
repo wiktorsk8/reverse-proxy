@@ -49,6 +49,7 @@ func (r *RateLimiter) GetMiddleware() func(http.Handler) http.Handler {
 			if !limiter.Allow() {
 				w.WriteHeader(http.StatusTooManyRequests)
 			}
+			next.ServeHTTP(w, req)
 		})
 	}
 }
