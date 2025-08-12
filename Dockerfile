@@ -16,6 +16,7 @@ WORKDIR /prod
 
 COPY --from=base /app/reverse-proxy .
 COPY --from=base /app/internal/config/proxy.yml .
+COPY --from=base /app/.env .
 
 USER nonroot:nonroot
 

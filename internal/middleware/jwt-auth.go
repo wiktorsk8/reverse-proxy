@@ -3,10 +3,11 @@ package middleware
 import (
 	"errors"
 	"fmt"
-	"github.com/golang-jwt/jwt/v5"
-	"github.com/wiktorsk8/reverse-proxy/internal/config"
 	"net/http"
 	"strings"
+
+	"github.com/golang-jwt/jwt/v5"
+	"github.com/wiktorsk8/reverse-proxy/internal/config"
 )
 
 type JWTAuth struct {
@@ -31,10 +32,14 @@ func (j *JWTAuth) GetMiddleware() func(http.Handler) http.Handler {
 			}
 
 			token, err := jwt.Parse(tokenString, func(token *jwt.Token) (any, error) {
-				return secret, nil
-			}, jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}))
+				if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+					return nil, errors.New("unexpected signing method")
+				}
+				return []byte(secret), nil
+			})
 
 			if err != nil {
+				fmt.Println(err)
 				http.Error(w, "JWT parsing failed.", http.StatusBadGateway)
 				return
 			}
@@ -54,7 +59,7 @@ func (j *JWTAuth) GetMiddleware() func(http.Handler) http.Handler {
 
 			r.Header.Del("X-User-Id")
 			r.Header.Set("X-User-Email", issuer)
-			fmt.Println("ISSUER !!! : " + issuer)
+
 			next.ServeHTTP(w, r)
 		})
 	}
