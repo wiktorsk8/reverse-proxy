@@ -12,13 +12,16 @@ import (
 	"github.com/wiktorsk8/reverse-proxy/internal/middleware"
 )
 
-func NewProxyRouter(config config.ProxyConfig) *chi.Mux {
+func NewProxyRouter(proxConfig config.ProxyConfig, authConfig config.AuthConfig) *chi.Mux {
 	r := chi.NewRouter()
 
-	rateLimiter := middleware.NewRateLimiterMiddleware(config.RateLimit)
+	rateLimiter := middleware.NewRateLimiterMiddleware(proxConfig.RateLimit)
 	r.Use(rateLimiter.GetMiddleware())
 
-	for _, service := range config.Services {
+	jwtAuthMiddleware := middleware.NewJWTAuthMiddleware(authConfig)
+	r.Use(jwtAuthMiddleware.GetMiddleware())
+
+	for _, service := range proxConfig.Services {
 		handler := getServiceProxyHandler(service)
 		r.Handle(service.Endpoint+"/*", handler)
 	}
