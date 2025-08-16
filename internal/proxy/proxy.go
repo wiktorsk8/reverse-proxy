@@ -30,7 +30,7 @@ func NewProxyRouter(proxConfig config.ProxyConfig, authConfig config.AuthConfig)
 }
 
 func getServiceProxyHandler(service config.Service) http.Handler {
-	reverseProxy := createReverseProxy(service.Host)
+	reverseProxy := createReverseProxy(service.Host, service.Port)
 
 	reverseProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		fmt.Printf("Proxy error when calling %s: %v\n", service.Host, err)
@@ -39,15 +39,17 @@ func getServiceProxyHandler(service config.Service) http.Handler {
 
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		r.URL.Path = strings.TrimPrefix(r.URL.Path, service.Endpoint)
-		fmt.Println(r.URL.Path)
-
 		reverseProxy.ServeHTTP(w, r)
 	})
 }
 
-func createReverseProxy(serviceUrl string) *httputil.ReverseProxy {
+func createReverseProxy(serviceUrl, port string) *httputil.ReverseProxy {
+	if port != "" {
+		serviceUrl = serviceUrl + ":" + port
+	}
+
 	target, err := url.Parse(serviceUrl)
-	fmt.Println(target)
+
 	if err != nil {
 		panic(err) //TODO: Handle
 	}
